@@ -17,8 +17,8 @@ async function getBlockTxCount(lastStartingTime){
     if(lastBlockNum!==blockNum){
         lastBlockNum = blockNum
         var block = await web3.eth.getBlock(blockNum)
-        var blockMiner = await getBlockValidator(block.hash)
-        console.log(blockMiner)
+        var blockMiner = await getBlockValidator(blockNum)
+        // console.log("haha"+blockMiner)
         console.log(blockNum , " : ",block.transactions.length)
 
         var blockS = {
@@ -38,14 +38,14 @@ async function getBlockTxCount(lastStartingTime){
     } 
 }
 
-async function getBlockValidator(blockHash){
-
+async function getBlockValidator(blockNum){
+    // console.log(blockHash)
     var blockMiner
-    
+    var hexBlockNum = '0x' + blockNum.toString(16)
     await axios.post(HTTPSWEB3 ,{
         jsonrpc: '2.0',
-        method: 'bor_getAuthorByHash',
-        params: [blockHash],
+        method: 'bor_getAuthor',
+        params: [hexBlockNum],
         id: 1
     }, {
         headers: {
