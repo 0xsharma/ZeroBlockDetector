@@ -2,60 +2,11 @@ const axios = require('axios')
 const Web3 = require('web3');
 const fs = require('fs')
 
-var WSWEB3 = 'ws://localhost:8546'
-var HTTPSWEB3 = 'http://localhost:8545'
-
+var WSWEB3 = 'ws://localhost:8585'
 var web3 = new Web3(Web3.givenProvider || WSWEB3);
 
 const timer = ms => new Promise(res => setTimeout(res, ms))
 
-var lastBlockNum = 0
-
-async function getBlockTxCount(lastStartingTime){
-
-    var blockNum = await web3.eth.getBlockNumber()-200
-    if(lastBlockNum!==blockNum){
-        lastBlockNum = blockNum
-        var block = await web3.eth.getBlock(blockNum)
-        var blockMiner = await getBlockValidator(block.hash)
-        console.log(blockMiner)
-        console.log(blockNum , " : ",block.transactions.length)
-
-        var blockS = {
-            blockNumber : blockNum,
-            timestamp : block.timestamp,
-            txCount : block.transactions.length,
-            blockMiner : blockMiner,
-        }
-    
-        fs.appendFile(`./out-${lastStartingTime}.json`, '\n'+JSON.stringify(blockS) , function (err) {
-            if (err) throw err;
-            console.log('Added', JSON.stringify(blockS));
-         });
-
-         return blockS
-    } 
-}
-
-async function getBlockValidator(blockHash){
-
-    var blockMiner
-    
-    await axios.post(HTTPSWEB3 ,{
-        jsonrpc: '2.0',
-        method: 'bor_getAuthorByHash',
-        params: [blockHash],
-        id: 1
-    }, {
-        headers: {
-        'Content-Type': 'application/json',
-        },
-    }).then((response) => {
-        blockMiner = response.data.result
-    })
-
-    return blockMiner
-}
 
 var validatorsLegacy = {}
 var totalBlocks = 0
@@ -151,16 +102,54 @@ async function iteration(lastStartingTime){
     return
 }
 
+
 async function main(){
 
-    var lastStartingTime = Math.floor(new Date().getTime() / 1000)
+    // var lastStartingTime = Math.floor(new Date().getTime() / 1000)
 
-    while(true){
-        await iteration(lastStartingTime)
-        lastStartingTime = Math.floor(new Date().getTime() / 1000)
-    }
+    await web3.eth.subscribe('newBlockHeaders', async function(error, header){
+        console.log(header)
+        if (!error) {
 
-    
+                    var blockMiner
+                // while ((Math.floor(new Date().getTime() / 1000))-lastStartingTime <= 600){
+                    console.log('Number:', header.number);
+                    console.log('Hash:', header.hash);
+                    console.log('Difficulty:', header.difficulty);
+                    console.log('Parent Hash:', header.parentHash);
+                    console.log('Timestamp:', header.timestamp);
+                    console.log('Gas Used:', header.gasUsed);
+                // }
+
+                await axios.post('http://localhost:8545', {
+                        jsonrpc: '2.0',
+                        method: 'bor_getAuthorByHash',
+                        params: [header.hash],
+                        id: 1
+                    }, {
+                        headers: {
+                        'Content-Type': 'application/json',
+                        },
+                    }).then((response) => {
+                        blockMiner = response.data.result
+                        // console.log('Author:', response.data.result);
+                        // console.log();
+                })
+
+                var blockS = {
+                    blockNumber : header.number,
+                    timestamp : header.timestamp,
+                    txCount : header.transactions.length,
+                    blockMiner : blockMiner,
+                }
+
+                console.log(blockS)
+
+
+            }
+        }
+    )
+
 }
 
 main()
