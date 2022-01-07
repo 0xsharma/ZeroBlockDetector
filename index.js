@@ -25,6 +25,7 @@ async function getBlockTxCount(lastStartingTime){
             blockNumber : blockNum,
             timestamp : block.timestamp,
             txCount : block.transactions.length,
+            gas : block.gasUsed,
             blockMiner : blockMiner,
         }
     
@@ -73,13 +74,27 @@ async function iteration(lastStartingTime){
                 
                 var blockMinerDetails = {
                     totalBlockCount : 0,
-                    emptyBlocksCount : 0
+                    emptyBlocksCount : 0,
+                    minGas : 9999999999999,
+                    maxGas : 0,
+                    avgGas : 0,
                 }
+
                 totalBlocks +=1
                 blockMinerDetails.totalBlockCount += 1
+                
                 if(blockS.txCount===0){ 
                     totalEmptyBlocks+=1
                     blockMinerDetails.emptyBlocksCount +=1
+                }else{
+                    var nonEmptyBlocks = blockMinerDetails.totalBlockCount-blockMinerDetails.emptyBlocksCount
+                    blockMinerDetails.avgGas = (blockMinerDetails.avgGas*(nonEmptyBlocks-1) + blockS.gas)/nonEmptyBlocks
+                    if(blockS.gas>blockMinerDetails.maxGas){
+                        blockMinerDetails.maxGas = blockS.gas
+                    }
+                    if(blockS.gas<blockMinerDetails.minGas){
+                        blockMinerDetails.minGas = blockS.gas
+                    }
                 }
                 validatorsLegacy[blockS.blockMiner] = blockMinerDetails
 
@@ -90,21 +105,42 @@ async function iteration(lastStartingTime){
                 if(blockS.txCount===0){
                     totalEmptyBlocks+=1
                     validatorsLegacy[blockS.blockMiner].emptyBlocksCount +=1
+                }else{
+                    var nonEmptyBlocks = validatorsLegacy[blockS.blockMiner].totalBlockCount-validatorsLegacy[blockS.blockMiner].emptyBlocksCount
+                    validatorsLegacy[blockS.blockMiner].avgGas = (validatorsLegacy[blockS.blockMiner].avgGas*(nonEmptyBlocks-1) +blockS.gas)/nonEmptyBlocks
+                    if(blockS.gas>validatorsLegacy[blockS.blockMiner].maxGas){
+                        validatorsLegacy[blockS.blockMiner].maxGas = blockS.gas
+                    }
+                    if(blockS.gas<validatorsLegacy[blockS.blockMiner].minGas){
+                        validatorsLegacy[blockS.blockMiner].minGas = blockS.gas
+                    }
                 }
-
             }
 
             if(validators[blockS.blockMiner]===undefined){
 
                 var blockMinerDetails = {
                     totalBlockCount : 0,
-                    emptyBlocksCount : 0
+                    emptyBlocksCount : 0,
+                    minGas : 9999999999999,
+                    maxGas : 0,
+                    avgGas : 0,
                 }
+
                 totalBlocksPerIteration += 1
                 blockMinerDetails.totalBlockCount += 1
                 if(blockS.txCount===0){
                     totalEmptyBlocksPerIteration += 1
                     blockMinerDetails.emptyBlocksCount +=1
+                }else{
+                    var nonEmptyBlocks = blockMinerDetails.totalBlockCount-blockMinerDetails.emptyBlocksCount
+                    blockMinerDetails.avgGas = (blockMinerDetails.avgGas*(nonEmptyBlocks-1) +blockS.gas)/nonEmptyBlocks
+                    if(blockS.gas>blockMinerDetails.maxGas){
+                        blockMinerDetails.maxGas = blockS.gas
+                    }
+                    if(blockS.gas<blockMinerDetails.minGas){
+                        blockMinerDetails.minGas = blockS.gas
+                    }
                 }
                 validators[blockS.blockMiner] = blockMinerDetails
 
@@ -115,6 +151,15 @@ async function iteration(lastStartingTime){
                 if(blockS.txCount===0){
                     totalEmptyBlocksPerIteration += 1
                     validators[blockS.blockMiner].emptyBlocksCount +=1
+                }else{
+                    var nonEmptyBlocks = validators[blockS.blockMiner].totalBlockCount-validators[blockS.blockMiner].emptyBlocksCount
+                    validators[blockS.blockMiner].avgGas = (validators[blockS.blockMiner].avgGas*(nonEmptyBlocks-1) +blockS.gas)/nonEmptyBlocks
+                    if(blockS.gas>validators[blockS.blockMiner].maxGas){
+                        validators[blockS.blockMiner].maxGas = blockS.gas
+                    }
+                    if(blockS.gas<validators[blockS.blockMiner].minGas){
+                        validators[blockS.blockMiner].minGas = blockS.gas
+                    }
                 }
 
             }
