@@ -55,7 +55,7 @@ async function iteration(lastStartingTime){
     var validators = {}
     var totalBlocksPerIteration = 0
     var totalEmptyBlocksPerIteration = 0
-    while ((Math.floor(new Date().getTime() / 1000))-lastStartingTime <= 20){
+    while ((Math.floor(new Date().getTime() / 1000))-lastStartingTime <= 600){
         var blockS = await getBlockTxCount(lastStartingTime)
         if(blockS!==undefined){
 
