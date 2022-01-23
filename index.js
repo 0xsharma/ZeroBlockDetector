@@ -13,12 +13,20 @@ var lastBlockNum = 0
 
 async function getBlockTxCount(lastStartingTime){
 
+    try {
+        await web3.eth.net.isListening()
+    } catch (error) {
+        console.log('ERR : ' + error+'\n')
+        await timer(1500)
+        web3 = new Web3(Web3.givenProvider || WSWEB3);
+        return
+    }
+
     var blockNum = await web3.eth.getBlockNumber()-200
     if(lastBlockNum!==blockNum){
         lastBlockNum = blockNum
         var block = await web3.eth.getBlock(blockNum)
-        var blockMiner = await getBlockValidator(block.hash)
-        console.log(blockMiner)
+        var blockMiner = await getBlockValidator(blockNum)
         console.log(blockNum , " : ",block.transactions.length)
 
         var blockS = {
@@ -29,23 +37,23 @@ async function getBlockTxCount(lastStartingTime){
             blockMiner : blockMiner,
         }
     
-        fs.appendFile(`./out-${lastStartingTime}.json`, '\n'+JSON.stringify(blockS) , function (err) {
+        fs.appendFile(`./output/out-${lastStartingTime}.json`, '\n'+JSON.stringify(blockS) , function (err) {
             if (err) throw err;
             console.log('Added', JSON.stringify(blockS));
-         });
+        });
 
-         return blockS
+        return blockS
     } 
+
 }
 
-async function getBlockValidator(blockHash){
-
+async function getBlockValidator(blockNum){
     var blockMiner
-    
+    var hexBlockNum = '0x' + blockNum.toString(16)
     await axios.post(HTTPSWEB3 ,{
         jsonrpc: '2.0',
-        method: 'bor_getAuthorByHash',
-        params: [blockHash],
+        method: 'bor_getAuthor',
+        params: [hexBlockNum],
         id: 1
     }, {
         headers: {
@@ -169,7 +177,7 @@ async function iteration(lastStartingTime){
         await timer(300)
     }
 
-    fs.appendFile(`./out-${lastStartingTime}.json`, `\n\nSUMMARY :
+    fs.appendFile(`./output/out-${lastStartingTime}.json`, `\n\nSUMMARY :
     \nTOTAL BLOCK IN THIS ITERATION : ` + totalBlocksPerIteration +
     `\nTOTAL EMPTY BLOCK IN THIS ITERATION : ` + totalEmptyBlocksPerIteration + '\n\n' 
     +JSON.stringify(validators) , function (err) {
@@ -177,7 +185,7 @@ async function iteration(lastStartingTime){
         console.log('Added Summary');
      });
 
-    fs.appendFile(`./summaries.json`, `\n\nSUMMARY FOR ./out-${lastStartingTime}.json :
+    fs.appendFile(`./output/summaries.json`, `\n\nSUMMARY FOR ./out-${lastStartingTime}.json :
     \nTOTAL BLOCK IN THIS ITERATION : ` + totalBlocksPerIteration +
     `\nTOTAL EMPTY BLOCK IN THIS ITERATION : ` + totalEmptyBlocksPerIteration + '\n\n' 
     +JSON.stringify(validators) + '\n-----------' , function (err) {
@@ -185,7 +193,7 @@ async function iteration(lastStartingTime){
         // console.log('Added Summary');
     });
 
-    fs.writeFile(`./conciseSummary.json`, `\n\nSUMMARY :
+    fs.writeFile(`./output/conciseSummary.json`, `\n\nSUMMARY :
     \nTOTAL BLOCKS : ` + totalBlocks +
     `\nTOTAL EMPTY BLOCKS : ` + totalEmptyBlocks + '\n\n' 
     +JSON.stringify(validatorsLegacy) + '\n-----------' , function (err) {

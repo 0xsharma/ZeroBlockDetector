@@ -1,2 +1,5 @@
 /node_modules
 secrets.js
+out-*.json
+summaries.json
+conciseSummary.json
